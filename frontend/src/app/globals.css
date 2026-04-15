@@ -11,6 +11,27 @@
   --ok: #1e9150;
   --warn: #d17a00;
   --danger: #c44536;
+  --skeleton: #e2ddd5;
+  --skeleton-shine: #f0ebe3;
+  --input-border: rgba(20, 32, 50, 0.2);
+  --input-bg: #ffffff;
+}
+
+.dark {
+  --bg: #0f1419;
+  --surface: #1c2530;
+  --surface-strong: #253040;
+  --ink: #e4e8ed;
+  --muted: #8899aa;
+  --accent: #e07a44;
+  --accent-ink: #f0b088;
+  --ok: #34d399;
+  --warn: #fbbf24;
+  --danger: #f87171;
+  --skeleton: #253040;
+  --skeleton-shine: #2d3a4a;
+  --input-border: rgba(228, 232, 237, 0.15);
+  --input-bg: #1c2530;
 }
 
 @theme inline {
@@ -26,6 +47,14 @@ body {
   color: var(--ink);
   font-family: var(--font-sora), sans-serif;
   min-height: 100vh;
+  transition: background 0.3s, color 0.3s;
+}
+
+.dark body {
+  background:
+    radial-gradient(circle at 15% 0%, rgba(224, 122, 68, 0.08), transparent 40%),
+    radial-gradient(circle at 85% 10%, rgba(200, 220, 255, 0.04), transparent 35%),
+    var(--bg);
 }
 
 a {
@@ -37,6 +66,11 @@ a {
   border: 1px solid rgba(20, 32, 50, 0.08);
   border-radius: 1rem;
   box-shadow: 0 20px 40px -28px rgba(20, 32, 50, 0.4);
+}
+
+.dark .card {
+  border-color: rgba(228, 232, 237, 0.08);
+  box-shadow: 0 20px 40px -28px rgba(0, 0, 0, 0.6);
 }
 
 .text-muted {
@@ -57,4 +91,16 @@ a {
 
 .status-great {
   color: var(--ok);
+}
+
+@keyframes shimmer {
+  0% { background-position: -400px 0; }
+  100% { background-position: 400px 0; }
+}
+
+.skeleton {
+  background: linear-gradient(90deg, var(--skeleton) 25%, var(--skeleton-shine) 50%, var(--skeleton) 75%);
+  background-size: 800px 100%;
+  animation: shimmer 1.5s infinite linear;
+  border-radius: 0.5rem;
 }

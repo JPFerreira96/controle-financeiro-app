@@ -5,8 +5,8 @@ export default function Home() {
     <div className="mx-auto flex min-h-screen w-full max-w-6xl flex-col justify-center px-6 py-14 lg:px-10">
       <main className="card grid gap-8 p-8 lg:grid-cols-2 lg:p-12">
         <section className="flex flex-col gap-5">
-          <p className="font-mono text-xs uppercase tracking-[0.25em] text-[#5a2f14]">Finance OS</p>
-          <h1 className="text-4xl font-semibold leading-tight text-[#142032] lg:text-5xl">
+          <p className="font-mono text-xs uppercase tracking-[0.25em]" style={{ color: "var(--accent-ink)" }}>Finance OS</p>
+          <h1 className="text-4xl font-semibold leading-tight lg:text-5xl" style={{ color: "var(--ink)" }}>
             Controle financeiro pessoal com graficos, relatorios e analise por IA.
           </h1>
           <p className="text-muted max-w-xl">
@@ -22,7 +22,8 @@ export default function Home() {
             </Link>
             <Link
               href="/dashboard"
-              className="rounded-xl border border-[#142032]/20 bg-white px-5 py-3 text-sm font-semibold text-[#142032] transition hover:border-[#142032]/40"
+              className="rounded-xl border px-5 py-3 text-sm font-semibold transition hover:opacity-80"
+              style={{ borderColor: "var(--input-border)", backgroundColor: "var(--surface)", color: "var(--ink)" }}
             >
               Ver dashboard
             </Link>
@@ -31,7 +32,7 @@ export default function Home() {
 
         <section className="card bg-[var(--surface-strong)] p-6">
           <h2 className="mb-4 text-lg font-semibold">Funcionalidades principais</h2>
-          <ul className="grid gap-2 text-sm text-[#1c3149]">
+          <ul className="grid gap-2 text-sm" style={{ color: "var(--ink)" }}>
             <li>Cadastro e autenticacao de usuario</li>
             <li>Gestao de receitas e despesas por categoria</li>
             <li>Graficos semanais, mensais, anuais e por categoria</li>

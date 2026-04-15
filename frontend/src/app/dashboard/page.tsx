@@ -21,6 +21,8 @@ import {
 import { apiRequest } from "@/lib/api";
 import { clearAuthSession, getAuthenticatedUser, getToken } from "@/lib/auth-storage";
 import { formatDate, toCurrency } from "@/lib/format";
+import { useTheme } from "@/lib/theme-context";
+import DashboardSkeleton from "./dashboard-skeleton";
 import type { DashboardReport, Expense, ExpenseCategory, FinancialHealthAnalysis, Income } from "@/types/finance";
 
 const CATEGORY_OPTIONS: Array<{ value: ExpenseCategory; label: string }> = [
@@ -38,6 +40,7 @@ const CHART_COLORS = ["#e07a44", "#142032", "#2d6a4f", "#d17a00", "#7d4f50", "#4
 
 export default function DashboardPage() {
   const router = useRouter();
+  const { theme, toggleTheme } = useTheme();
   const [dashboard, setDashboard] = useState<DashboardReport | null>(null);
   const [analysis, setAnalysis] = useState<FinancialHealthAnalysis | null>(null);
   const [incomes, setIncomes] = useState<Income[]>([]);
@@ -308,18 +311,14 @@ export default function DashboardPage() {
   }, [analysis?.situation]);
 
   if (loading) {
-    return (
-      <main className="mx-auto flex min-h-screen w-full max-w-7xl items-center justify-center p-6">
-        <div className="card p-8 text-sm text-[#142032]">Carregando dashboard financeiro...</div>
-      </main>
-    );
+    return <DashboardSkeleton />;
   }
 
   if (!dashboard) {
     return (
       <main className="mx-auto flex min-h-screen w-full max-w-3xl items-center justify-center p-6">
         <div className="card p-8">
-          <p className="text-[#c44536]">{error ?? "Nao foi possivel carregar os dados."}</p>
+          <p style={{ color: "var(--danger)" }}>{error ?? "Nao foi possivel carregar os dados."}</p>
         </div>
       </main>
     );
@@ -329,8 +328,8 @@ export default function DashboardPage() {
     <main className="mx-auto flex min-h-screen w-full max-w-7xl flex-col gap-6 px-4 py-8 md:px-8">
       <header className="card flex flex-col gap-4 p-6 md:flex-row md:items-center md:justify-between">
         <div>
-          <p className="font-mono text-xs uppercase tracking-[0.2em] text-[#5a2f14]">Dashboard financeiro</p>
-          <h1 className="mt-2 text-2xl font-semibold text-[#142032]">Ola, {user?.name ?? "usuario"}.</h1>
+          <p className="font-mono text-xs uppercase tracking-[0.2em]" style={{ color: "var(--accent-ink)" }}>Dashboard financeiro</p>
+          <h1 className="mt-2 text-2xl font-semibold" style={{ color: "var(--ink)" }}>Ola, {user?.name ?? "usuario"}.</h1>
           <p className="text-muted text-sm">Acompanhe sua saude financeira em tempo real.</p>
         </div>
 
@@ -340,7 +339,8 @@ export default function DashboardPage() {
             <select
               value={year}
               onChange={(event) => setYear(Number(event.target.value))}
-              className="ml-2 rounded-lg border border-[#142032]/20 bg-white px-3 py-2"
+              className="ml-2 rounded-lg border px-3 py-2"
+              style={{ borderColor: "var(--input-border)", backgroundColor: "var(--input-bg)", color: "var(--ink)" }}
             >
               {yearOptions.map((option) => (
                 <option key={option} value={option}>
@@ -354,7 +354,8 @@ export default function DashboardPage() {
             <select
               value={month}
               onChange={(event) => setMonth(Number(event.target.value))}
-              className="ml-2 rounded-lg border border-[#142032]/20 bg-white px-3 py-2"
+              className="ml-2 rounded-lg border px-3 py-2"
+              style={{ borderColor: "var(--input-border)", backgroundColor: "var(--input-bg)", color: "var(--ink)" }}
             >
               {Array.from({ length: 12 }, (_, index) => index + 1).map((option) => (
                 <option key={option} value={option}>
@@ -366,21 +367,32 @@ export default function DashboardPage() {
           <button
             type="button"
             onClick={() => void loadData()}
-            className="rounded-lg bg-[#142032] px-4 py-2 text-sm font-semibold text-white"
+            className="rounded-lg px-4 py-2 text-sm font-semibold"
+            style={{ backgroundColor: "var(--ink)", color: "var(--surface)" }}
           >
             Atualizar
           </button>
           <button
             type="button"
+            onClick={toggleTheme}
+            className="rounded-lg border px-4 py-2 text-sm font-semibold"
+            style={{ borderColor: "var(--input-border)", color: "var(--ink)" }}
+            title={theme === "light" ? "Modo escuro" : "Modo claro"}
+          >
+            {theme === "light" ? "🌙" : "☀️"}
+          </button>
+          <button
+            type="button"
             onClick={logout}
-            className="rounded-lg border border-[#142032]/20 px-4 py-2 text-sm font-semibold text-[#142032]"
+            className="rounded-lg border px-4 py-2 text-sm font-semibold"
+            style={{ borderColor: "var(--input-border)", color: "var(--ink)" }}
           >
             Sair
           </button>
         </div>
       </header>
 
-      {error ? <div className="card border border-[#c44536]/20 p-4 text-sm text-[#c44536]">{error}</div> : null}
+      {error ? <div className="card p-4 text-sm" style={{ borderColor: "var(--danger)", color: "var(--danger)" }}>{error}</div> : null}
 
       <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
         <MetricCard label="Saldo atual" value={toCurrency(dashboard.currentBalance)} />
@@ -391,7 +403,7 @@ export default function DashboardPage() {
 
       <section className="grid gap-4 lg:grid-cols-3">
         <article className="card p-6 lg:col-span-2">
-          <h2 className="text-lg font-semibold text-[#142032]">Analise financeira com IA</h2>
+          <h2 className="text-lg font-semibold" style={{ color: "var(--ink)" }}>Analise financeira com IA</h2>
           <p className={`mt-3 text-sm font-semibold ${situationClassName}`}>
             Classificacao: {analysis?.situation ?? "NAO DISPONIVEL"}
           </p>
@@ -399,8 +411,8 @@ export default function DashboardPage() {
           <p className="text-muted mt-2 text-xs">Provider ativo: {analysis?.provider ?? "mock-provider-ai"}</p>
           <div className="mt-4 grid gap-3 md:grid-cols-2">
             <div>
-              <h3 className="text-sm font-semibold text-[#142032]">Categorias com gasto alto</h3>
-              <ul className="mt-2 grid gap-1 text-sm text-[#1c3149]">
+              <h3 className="text-sm font-semibold" style={{ color: "var(--ink)" }}>Categorias com gasto alto</h3>
+              <ul className="mt-2 grid gap-1 text-sm" style={{ color: "var(--ink)" }}>
                 {analysis?.excessiveCategories?.length ? (
                   analysis.excessiveCategories.map((category) => <li key={category}>- {category}</li>)
                 ) : (
@@ -409,8 +421,8 @@ export default function DashboardPage() {
               </ul>
             </div>
             <div>
-              <h3 className="text-sm font-semibold text-[#142032]">Categorias controladas</h3>
-              <ul className="mt-2 grid gap-1 text-sm text-[#1c3149]">
+              <h3 className="text-sm font-semibold" style={{ color: "var(--ink)" }}>Categorias controladas</h3>
+              <ul className="mt-2 grid gap-1 text-sm" style={{ color: "var(--ink)" }}>
                 {analysis?.controlledCategories?.length ? (
                   analysis.controlledCategories.map((category) => <li key={category}>- {category}</li>)
                 ) : (
@@ -419,8 +431,8 @@ export default function DashboardPage() {
               </ul>
             </div>
           </div>
-          <h3 className="mt-4 text-sm font-semibold text-[#142032]">Sugestoes de melhoria</h3>
-          <ul className="mt-2 grid gap-1 text-sm text-[#1c3149]">
+          <h3 className="mt-4 text-sm font-semibold" style={{ color: "var(--ink)" }}>Sugestoes de melhoria</h3>
+          <ul className="mt-2 grid gap-1 text-sm" style={{ color: "var(--ink)" }}>
             {analysis?.suggestions?.length ? (
               analysis.suggestions.map((suggestion) => <li key={suggestion}>- {suggestion}</li>)
             ) : (
@@ -430,7 +442,7 @@ export default function DashboardPage() {
         </article>
 
         <article className="card p-6">
-          <h2 className="text-lg font-semibold text-[#142032]">Resumos</h2>
+          <h2 className="text-lg font-semibold" style={{ color: "var(--ink)" }}>Resumos</h2>
           <p className="text-muted mt-3 text-sm">{dashboard.summaries.monthly}</p>
           <p className="text-muted mt-3 text-sm">{dashboard.summaries.annual}</p>
         </article>
@@ -438,12 +450,13 @@ export default function DashboardPage() {
 
       <section className="grid gap-4 lg:grid-cols-2">
         <article className="card p-6">
-          <h2 className="text-lg font-semibold text-[#142032]">
+          <h2 className="text-lg font-semibold" style={{ color: "var(--ink)" }}>
             {editingIncome ? "Editar receita" : "Cadastrar receita"}
           </h2>
           <form onSubmit={editingIncome ? handleUpdateIncome : handleCreateIncome} className="mt-4 grid gap-3">
             <input
-              className="rounded-lg border border-[#142032]/20 bg-white px-3 py-2 text-sm"
+              className="rounded-lg border px-3 py-2 text-sm"
+              style={{ borderColor: "var(--input-border)", backgroundColor: "var(--input-bg)", color: "var(--ink)" }}
               placeholder="Descricao da receita"
               value={incomeTitle}
               onChange={(event) => setIncomeTitle(event.target.value)}
@@ -453,7 +466,8 @@ export default function DashboardPage() {
               type="number"
               min="0.01"
               step="0.01"
-              className="rounded-lg border border-[#142032]/20 bg-white px-3 py-2 text-sm"
+              className="rounded-lg border px-3 py-2 text-sm"
+              style={{ borderColor: "var(--input-border)", backgroundColor: "var(--input-bg)", color: "var(--ink)" }}
               placeholder="Valor"
               value={incomeAmount}
               onChange={(event) => setIncomeAmount(event.target.value)}
@@ -461,14 +475,16 @@ export default function DashboardPage() {
             />
             <input
               type="date"
-              className="rounded-lg border border-[#142032]/20 bg-white px-3 py-2 text-sm"
+              className="rounded-lg border px-3 py-2 text-sm"
+              style={{ borderColor: "var(--input-border)", backgroundColor: "var(--input-bg)", color: "var(--ink)" }}
               value={incomeDate}
               onChange={(event) => setIncomeDate(event.target.value)}
             />
             <div className="flex gap-2">
               <button
                 type="submit"
-                className="flex-1 rounded-lg bg-[#1e9150] px-4 py-2 text-sm font-semibold text-white disabled:opacity-60"
+                className="flex-1 rounded-lg px-4 py-2 text-sm font-semibold text-white disabled:opacity-60"
+                style={{ backgroundColor: "var(--ok)" }}
                 disabled={busyAction === "income"}
               >
                 {busyAction === "income" ? "Salvando..." : editingIncome ? "Atualizar receita" : "Salvar receita"}
@@ -477,7 +493,8 @@ export default function DashboardPage() {
                 <button
                   type="button"
                   onClick={cancelEditIncome}
-                  className="rounded-lg border border-[#142032]/20 px-4 py-2 text-sm font-semibold text-[#142032]"
+                  className="rounded-lg border px-4 py-2 text-sm font-semibold"
+                  style={{ borderColor: "var(--input-border)", color: "var(--ink)" }}
                 >
                   Cancelar
                 </button>
@@ -487,12 +504,13 @@ export default function DashboardPage() {
         </article>
 
         <article className="card p-6">
-          <h2 className="text-lg font-semibold text-[#142032]">
+          <h2 className="text-lg font-semibold" style={{ color: "var(--ink)" }}>
             {editingExpense ? "Editar despesa" : "Cadastrar despesa"}
           </h2>
           <form onSubmit={editingExpense ? handleUpdateExpense : handleCreateExpense} className="mt-4 grid gap-3">
             <input
-              className="rounded-lg border border-[#142032]/20 bg-white px-3 py-2 text-sm"
+              className="rounded-lg border px-3 py-2 text-sm"
+              style={{ borderColor: "var(--input-border)", backgroundColor: "var(--input-bg)", color: "var(--ink)" }}
               placeholder="Descricao da despesa"
               value={expenseTitle}
               onChange={(event) => setExpenseTitle(event.target.value)}
@@ -502,7 +520,8 @@ export default function DashboardPage() {
               type="number"
               min="0.01"
               step="0.01"
-              className="rounded-lg border border-[#142032]/20 bg-white px-3 py-2 text-sm"
+              className="rounded-lg border px-3 py-2 text-sm"
+              style={{ borderColor: "var(--input-border)", backgroundColor: "var(--input-bg)", color: "var(--ink)" }}
               placeholder="Valor"
               value={expenseAmount}
               onChange={(event) => setExpenseAmount(event.target.value)}
@@ -511,7 +530,8 @@ export default function DashboardPage() {
             <select
               value={expenseCategory}
               onChange={(event) => setExpenseCategory(event.target.value as ExpenseCategory)}
-              className="rounded-lg border border-[#142032]/20 bg-white px-3 py-2 text-sm"
+              className="rounded-lg border px-3 py-2 text-sm"
+              style={{ borderColor: "var(--input-border)", backgroundColor: "var(--input-bg)", color: "var(--ink)" }}
             >
               {CATEGORY_OPTIONS.map((option) => (
                 <option key={option.value} value={option.value}>
@@ -521,14 +541,16 @@ export default function DashboardPage() {
             </select>
             <input
               type="date"
-              className="rounded-lg border border-[#142032]/20 bg-white px-3 py-2 text-sm"
+              className="rounded-lg border px-3 py-2 text-sm"
+              style={{ borderColor: "var(--input-border)", backgroundColor: "var(--input-bg)", color: "var(--ink)" }}
               value={expenseDate}
               onChange={(event) => setExpenseDate(event.target.value)}
             />
             <div className="flex gap-2">
               <button
                 type="submit"
-                className="flex-1 rounded-lg bg-[#c44536] px-4 py-2 text-sm font-semibold text-white disabled:opacity-60"
+                className="flex-1 rounded-lg px-4 py-2 text-sm font-semibold text-white disabled:opacity-60"
+                style={{ backgroundColor: "var(--danger)" }}
                 disabled={busyAction === "expense"}
               >
                 {busyAction === "expense" ? "Salvando..." : editingExpense ? "Atualizar despesa" : "Salvar despesa"}
@@ -537,7 +559,8 @@ export default function DashboardPage() {
                 <button
                   type="button"
                   onClick={cancelEditExpense}
-                  className="rounded-lg border border-[#142032]/20 px-4 py-2 text-sm font-semibold text-[#142032]"
+                  className="rounded-lg border px-4 py-2 text-sm font-semibold"
+                  style={{ borderColor: "var(--input-border)", color: "var(--ink)" }}
                 >
                   Cancelar
                 </button>
@@ -634,28 +657,30 @@ export default function DashboardPage() {
 
       <section className="grid gap-4 lg:grid-cols-2">
         <article className="card p-6">
-          <h2 className="text-lg font-semibold text-[#142032]">Ultimas receitas</h2>
+          <h2 className="text-lg font-semibold" style={{ color: "var(--ink)" }}>Ultimas receitas</h2>
           <div className="mt-3 max-h-72 space-y-2 overflow-auto pr-1">
             {incomes.length ? (
               incomes.slice(0, 10).map((income) => (
-                <div key={income.id} className="flex items-center justify-between rounded-lg border border-[#142032]/10 px-3 py-2 text-sm">
+                <div key={income.id} className="flex items-center justify-between rounded-lg border px-3 py-2 text-sm" style={{ borderColor: "var(--input-border)" }}>
                   <div>
                     <p className="font-semibold">{income.title}</p>
                     <p className="text-muted">{formatDate(income.receivedAt)}</p>
-                    <p className="text-[#1e9150]">{toCurrency(income.amount)}</p>
+                    <p style={{ color: "var(--ok)" }}>{toCurrency(income.amount)}</p>
                   </div>
                   <div className="flex gap-1">
                     <button
                       type="button"
                       onClick={() => startEditIncome(income)}
-                      className="rounded px-2 py-1 text-xs font-semibold text-[#142032] hover:bg-[#142032]/10"
+                      className="rounded px-2 py-1 text-xs font-semibold hover:opacity-70"
+                      style={{ color: "var(--ink)" }}
                     >
                       Editar
                     </button>
                     <button
                       type="button"
                       onClick={() => void handleDeleteIncome(income.id)}
-                      className="rounded px-2 py-1 text-xs font-semibold text-[#c44536] hover:bg-[#c44536]/10"
+                      className="rounded px-2 py-1 text-xs font-semibold hover:opacity-70"
+                      style={{ color: "var(--danger)" }}
                     >
                       Excluir
                     </button>
@@ -669,30 +694,32 @@ export default function DashboardPage() {
         </article>
 
         <article className="card p-6">
-          <h2 className="text-lg font-semibold text-[#142032]">Ultimas despesas</h2>
+          <h2 className="text-lg font-semibold" style={{ color: "var(--ink)" }}>Ultimas despesas</h2>
           <div className="mt-3 max-h-72 space-y-2 overflow-auto pr-1">
             {expenses.length ? (
               expenses.slice(0, 10).map((expense) => (
-                <div key={expense.id} className="flex items-center justify-between rounded-lg border border-[#142032]/10 px-3 py-2 text-sm">
+                <div key={expense.id} className="flex items-center justify-between rounded-lg border px-3 py-2 text-sm" style={{ borderColor: "var(--input-border)" }}>
                   <div>
                     <p className="font-semibold">{expense.title}</p>
                     <p className="text-muted">
                       {formatDate(expense.spentAt)} | {expense.category}
                     </p>
-                    <p className="text-[#c44536]">{toCurrency(expense.amount)}</p>
+                    <p style={{ color: "var(--danger)" }}>{toCurrency(expense.amount)}</p>
                   </div>
                   <div className="flex gap-1">
                     <button
                       type="button"
                       onClick={() => startEditExpense(expense)}
-                      className="rounded px-2 py-1 text-xs font-semibold text-[#142032] hover:bg-[#142032]/10"
+                      className="rounded px-2 py-1 text-xs font-semibold hover:opacity-70"
+                      style={{ color: "var(--ink)" }}
                     >
                       Editar
                     </button>
                     <button
                       type="button"
                       onClick={() => void handleDeleteExpense(expense.id)}
-                      className="rounded px-2 py-1 text-xs font-semibold text-[#c44536] hover:bg-[#c44536]/10"
+                      className="rounded px-2 py-1 text-xs font-semibold hover:opacity-70"
+                      style={{ color: "var(--danger)" }}
                     >
                       Excluir
                     </button>
@@ -713,7 +740,7 @@ function MetricCard({ label, value }: { label: string; value: string }) {
   return (
     <article className="card p-4">
       <p className="text-muted text-sm">{label}</p>
-      <p className="mt-2 text-2xl font-semibold text-[#142032]">{value}</p>
+      <p className="mt-2 text-2xl font-semibold" style={{ color: "var(--ink)" }}>{value}</p>
     </article>
   );
 }
@@ -721,7 +748,7 @@ function MetricCard({ label, value }: { label: string; value: string }) {
 function ChartCard({ title, children }: { title: string; children: ReactNode }) {
   return (
     <article className="card p-4">
-      <h2 className="mb-3 text-base font-semibold text-[#142032]">{title}</h2>
+      <h2 className="mb-3 text-base font-semibold" style={{ color: "var(--ink)" }}>{title}</h2>
       {children}
     </article>
   );

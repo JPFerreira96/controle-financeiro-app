@@ -56,11 +56,11 @@ export default function AuthPage() {
       <div className="card w-full p-8 md:p-10">
         <div className="mb-8 flex items-start justify-between">
           <div>
-            <p className="font-mono text-xs uppercase tracking-[0.2em] text-[#5a2f14]">Finance OS</p>
-            <h1 className="mt-3 text-3xl font-semibold text-[#142032]">{pageTitle}</h1>
+            <p className="font-mono text-xs uppercase tracking-[0.2em]" style={{ color: "var(--accent-ink)" }}>Finance OS</p>
+            <h1 className="mt-3 text-3xl font-semibold" style={{ color: "var(--ink)" }}>{pageTitle}</h1>
             <p className="text-muted mt-2 text-sm">Use seu email para entrar e acompanhar sua vida financeira.</p>
           </div>
-          <Link href="/" className="text-sm font-semibold text-[#142032] underline underline-offset-4">
+          <Link href="/" className="text-sm font-semibold underline underline-offset-4" style={{ color: "var(--ink)" }}>
             Voltar
           </Link>
         </div>
@@ -70,7 +70,8 @@ export default function AuthPage() {
             <label className="grid gap-1 text-sm">
               Nome
               <input
-                className="rounded-lg border border-[#142032]/20 bg-white px-3 py-2 outline-none ring-[#e07a44] focus:ring-2"
+                className="rounded-lg border px-3 py-2 outline-none ring-[#e07a44] focus:ring-2"
+                style={{ borderColor: "var(--input-border)", backgroundColor: "var(--input-bg)", color: "var(--ink)" }}
                 placeholder="Seu nome"
                 value={name}
                 onChange={(event) => setName(event.target.value)}
@@ -83,7 +84,8 @@ export default function AuthPage() {
             Email
             <input
               type="email"
-              className="rounded-lg border border-[#142032]/20 bg-white px-3 py-2 outline-none ring-[#e07a44] focus:ring-2"
+              className="rounded-lg border px-3 py-2 outline-none ring-[#e07a44] focus:ring-2"
+              style={{ borderColor: "var(--input-border)", backgroundColor: "var(--input-bg)", color: "var(--ink)" }}
               placeholder="voce@email.com"
               value={email}
               onChange={(event) => setEmail(event.target.value)}
@@ -95,7 +97,8 @@ export default function AuthPage() {
             Senha
             <input
               type="password"
-              className="rounded-lg border border-[#142032]/20 bg-white px-3 py-2 outline-none ring-[#e07a44] focus:ring-2"
+              className="rounded-lg border px-3 py-2 outline-none ring-[#e07a44] focus:ring-2"
+              style={{ borderColor: "var(--input-border)", backgroundColor: "var(--input-bg)", color: "var(--ink)" }}
               placeholder="********"
               value={password}
               onChange={(event) => setPassword(event.target.value)}
@@ -104,8 +107,8 @@ export default function AuthPage() {
             />
           </label>
 
-          {feedback ? <p className="text-sm text-[#1e9150]">{feedback}</p> : null}
-          {error ? <p className="text-sm text-[#c44536]">{error}</p> : null}
+          {feedback ? <p className="text-sm" style={{ color: "var(--ok)" }}>{feedback}</p> : null}
+          {error ? <p className="text-sm" style={{ color: "var(--danger)" }}>{error}</p> : null}
 
           <button
             type="submit"
@@ -116,7 +119,7 @@ export default function AuthPage() {
           </button>
         </form>
 
-        <div className="mt-6 border-t border-[#142032]/10 pt-5 text-sm text-[#1b2f45]">
+        <div className="mt-6 border-t pt-5 text-sm" style={{ borderColor: "var(--input-border)", color: "var(--muted)" }}>
           {mode === "login" ? "Nao possui conta?" : "Ja possui conta?"}{" "}
           <button
             type="button"
