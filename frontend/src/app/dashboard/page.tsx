@@ -58,6 +58,9 @@ export default function DashboardPage() {
   const [expenseDate, setExpenseDate] = useState("");
   const [expenseCategory, setExpenseCategory] = useState<ExpenseCategory>("ALIMENTACAO");
 
+  const [editingIncome, setEditingIncome] = useState<Income | null>(null);
+  const [editingExpense, setEditingExpense] = useState<Expense | null>(null);
+
   const user = useMemo(() => getAuthenticatedUser(), []);
 
   const yearOptions = useMemo(() => {
@@ -170,6 +173,123 @@ export default function DashboardPage() {
   function logout() {
     clearAuthSession();
     router.push("/auth");
+  }
+
+  function startEditIncome(income: Income) {
+    setEditingIncome(income);
+    setIncomeTitle(income.title);
+    setIncomeAmount(String(income.amount));
+    setIncomeDate(income.receivedAt ? income.receivedAt.slice(0, 10) : "");
+  }
+
+  function cancelEditIncome() {
+    setEditingIncome(null);
+    setIncomeTitle("");
+    setIncomeAmount("");
+    setIncomeDate("");
+  }
+
+  function startEditExpense(expense: Expense) {
+    setEditingExpense(expense);
+    setExpenseTitle(expense.title);
+    setExpenseAmount(String(expense.amount));
+    setExpenseDate(expense.spentAt ? expense.spentAt.slice(0, 10) : "");
+    setExpenseCategory(expense.category);
+  }
+
+  function cancelEditExpense() {
+    setEditingExpense(null);
+    setExpenseTitle("");
+    setExpenseAmount("");
+    setExpenseDate("");
+    setExpenseCategory("ALIMENTACAO");
+  }
+
+  async function handleUpdateIncome(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    if (!editingIncome) return;
+    const token = getToken();
+    if (!token) { router.push("/auth"); return; }
+
+    setBusyAction("income");
+    setError(null);
+
+    try {
+      await apiRequest(`/api/incomes/${editingIncome.id}`, {
+        method: "PUT",
+        token,
+        body: JSON.stringify({
+          title: incomeTitle,
+          amount: Number(incomeAmount),
+          receivedAt: incomeDate || undefined,
+        }),
+      });
+      cancelEditIncome();
+      await loadData();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Falha ao atualizar receita.");
+    } finally {
+      setBusyAction(null);
+    }
+  }
+
+  async function handleDeleteIncome(id: string) {
+    const token = getToken();
+    if (!token) { router.push("/auth"); return; }
+
+    if (!confirm("Tem certeza que deseja excluir esta receita?")) return;
+
+    setError(null);
+    try {
+      await apiRequest(`/api/incomes/${id}`, { method: "DELETE", token });
+      await loadData();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Falha ao excluir receita.");
+    }
+  }
+
+  async function handleUpdateExpense(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    if (!editingExpense) return;
+    const token = getToken();
+    if (!token) { router.push("/auth"); return; }
+
+    setBusyAction("expense");
+    setError(null);
+
+    try {
+      await apiRequest(`/api/expenses/${editingExpense.id}`, {
+        method: "PUT",
+        token,
+        body: JSON.stringify({
+          title: expenseTitle,
+          amount: Number(expenseAmount),
+          category: expenseCategory,
+          spentAt: expenseDate || undefined,
+        }),
+      });
+      cancelEditExpense();
+      await loadData();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Falha ao atualizar despesa.");
+    } finally {
+      setBusyAction(null);
+    }
+  }
+
+  async function handleDeleteExpense(id: string) {
+    const token = getToken();
+    if (!token) { router.push("/auth"); return; }
+
+    if (!confirm("Tem certeza que deseja excluir esta despesa?")) return;
+
+    setError(null);
+    try {
+      await apiRequest(`/api/expenses/${id}`, { method: "DELETE", token });
+      await loadData();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Falha ao excluir despesa.");
+    }
   }
 
   const situationClassName = useMemo(() => {
@@ -318,8 +438,10 @@ export default function DashboardPage() {
 
       <section className="grid gap-4 lg:grid-cols-2">
         <article className="card p-6">
-          <h2 className="text-lg font-semibold text-[#142032]">Cadastrar receita</h2>
-          <form onSubmit={handleCreateIncome} className="mt-4 grid gap-3">
+          <h2 className="text-lg font-semibold text-[#142032]">
+            {editingIncome ? "Editar receita" : "Cadastrar receita"}
+          </h2>
+          <form onSubmit={editingIncome ? handleUpdateIncome : handleCreateIncome} className="mt-4 grid gap-3">
             <input
               className="rounded-lg border border-[#142032]/20 bg-white px-3 py-2 text-sm"
               placeholder="Descricao da receita"
@@ -343,19 +465,32 @@ export default function DashboardPage() {
               value={incomeDate}
               onChange={(event) => setIncomeDate(event.target.value)}
             />
-            <button
-              type="submit"
-              className="rounded-lg bg-[#1e9150] px-4 py-2 text-sm font-semibold text-white disabled:opacity-60"
-              disabled={busyAction === "income"}
-            >
-              {busyAction === "income" ? "Salvando..." : "Salvar receita"}
-            </button>
+            <div className="flex gap-2">
+              <button
+                type="submit"
+                className="flex-1 rounded-lg bg-[#1e9150] px-4 py-2 text-sm font-semibold text-white disabled:opacity-60"
+                disabled={busyAction === "income"}
+              >
+                {busyAction === "income" ? "Salvando..." : editingIncome ? "Atualizar receita" : "Salvar receita"}
+              </button>
+              {editingIncome && (
+                <button
+                  type="button"
+                  onClick={cancelEditIncome}
+                  className="rounded-lg border border-[#142032]/20 px-4 py-2 text-sm font-semibold text-[#142032]"
+                >
+                  Cancelar
+                </button>
+              )}
+            </div>
           </form>
         </article>
 
         <article className="card p-6">
-          <h2 className="text-lg font-semibold text-[#142032]">Cadastrar despesa</h2>
-          <form onSubmit={handleCreateExpense} className="mt-4 grid gap-3">
+          <h2 className="text-lg font-semibold text-[#142032]">
+            {editingExpense ? "Editar despesa" : "Cadastrar despesa"}
+          </h2>
+          <form onSubmit={editingExpense ? handleUpdateExpense : handleCreateExpense} className="mt-4 grid gap-3">
             <input
               className="rounded-lg border border-[#142032]/20 bg-white px-3 py-2 text-sm"
               placeholder="Descricao da despesa"
@@ -390,13 +525,24 @@ export default function DashboardPage() {
               value={expenseDate}
               onChange={(event) => setExpenseDate(event.target.value)}
             />
-            <button
-              type="submit"
-              className="rounded-lg bg-[#c44536] px-4 py-2 text-sm font-semibold text-white disabled:opacity-60"
-              disabled={busyAction === "expense"}
-            >
-              {busyAction === "expense" ? "Salvando..." : "Salvar despesa"}
-            </button>
+            <div className="flex gap-2">
+              <button
+                type="submit"
+                className="flex-1 rounded-lg bg-[#c44536] px-4 py-2 text-sm font-semibold text-white disabled:opacity-60"
+                disabled={busyAction === "expense"}
+              >
+                {busyAction === "expense" ? "Salvando..." : editingExpense ? "Atualizar despesa" : "Salvar despesa"}
+              </button>
+              {editingExpense && (
+                <button
+                  type="button"
+                  onClick={cancelEditExpense}
+                  className="rounded-lg border border-[#142032]/20 px-4 py-2 text-sm font-semibold text-[#142032]"
+                >
+                  Cancelar
+                </button>
+              )}
+            </div>
           </form>
         </article>
       </section>
@@ -492,10 +638,28 @@ export default function DashboardPage() {
           <div className="mt-3 max-h-72 space-y-2 overflow-auto pr-1">
             {incomes.length ? (
               incomes.slice(0, 10).map((income) => (
-                <div key={income.id} className="rounded-lg border border-[#142032]/10 px-3 py-2 text-sm">
-                  <p className="font-semibold">{income.title}</p>
-                  <p className="text-muted">{formatDate(income.receivedAt)}</p>
-                  <p className="text-[#1e9150]">{toCurrency(income.amount)}</p>
+                <div key={income.id} className="flex items-center justify-between rounded-lg border border-[#142032]/10 px-3 py-2 text-sm">
+                  <div>
+                    <p className="font-semibold">{income.title}</p>
+                    <p className="text-muted">{formatDate(income.receivedAt)}</p>
+                    <p className="text-[#1e9150]">{toCurrency(income.amount)}</p>
+                  </div>
+                  <div className="flex gap-1">
+                    <button
+                      type="button"
+                      onClick={() => startEditIncome(income)}
+                      className="rounded px-2 py-1 text-xs font-semibold text-[#142032] hover:bg-[#142032]/10"
+                    >
+                      Editar
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => void handleDeleteIncome(income.id)}
+                      className="rounded px-2 py-1 text-xs font-semibold text-[#c44536] hover:bg-[#c44536]/10"
+                    >
+                      Excluir
+                    </button>
+                  </div>
                 </div>
               ))
             ) : (
@@ -509,12 +673,30 @@ export default function DashboardPage() {
           <div className="mt-3 max-h-72 space-y-2 overflow-auto pr-1">
             {expenses.length ? (
               expenses.slice(0, 10).map((expense) => (
-                <div key={expense.id} className="rounded-lg border border-[#142032]/10 px-3 py-2 text-sm">
-                  <p className="font-semibold">{expense.title}</p>
-                  <p className="text-muted">
-                    {formatDate(expense.spentAt)} | {expense.category}
-                  </p>
-                  <p className="text-[#c44536]">{toCurrency(expense.amount)}</p>
+                <div key={expense.id} className="flex items-center justify-between rounded-lg border border-[#142032]/10 px-3 py-2 text-sm">
+                  <div>
+                    <p className="font-semibold">{expense.title}</p>
+                    <p className="text-muted">
+                      {formatDate(expense.spentAt)} | {expense.category}
+                    </p>
+                    <p className="text-[#c44536]">{toCurrency(expense.amount)}</p>
+                  </div>
+                  <div className="flex gap-1">
+                    <button
+                      type="button"
+                      onClick={() => startEditExpense(expense)}
+                      className="rounded px-2 py-1 text-xs font-semibold text-[#142032] hover:bg-[#142032]/10"
+                    >
+                      Editar
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => void handleDeleteExpense(expense.id)}
+                      className="rounded px-2 py-1 text-xs font-semibold text-[#c44536] hover:bg-[#c44536]/10"
+                    >
+                      Excluir
+                    </button>
+                  </div>
                 </div>
               ))
             ) : (
