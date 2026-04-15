@@ -1,0 +1,35 @@
+node_modules
+dist
+
+# ── Environment variables (never version secrets) ──
+.env
+.env.*
+!.env.example
+
+# ── Prisma generated client ──
+/generated/prisma
+
+# ── Database dumps & backups ──
+*.sql
+*.dump
+*.bak
+
+# ── SSL/TLS certificates & private keys ──
+*.pem
+*.key
+*.crt
+*.cert
+
+# ── Docker persistent data (if mounted locally) ──
+pg_data/
+mysql_data/
+
+# ── Logs ──
+*.log
+npm-debug.log*
+
+# ── OS / IDE ──
+.DS_Store
+Thumbs.db
+.vscode/
+*.swp

@@ -1,0 +1,60 @@
+@import "tailwindcss";
+
+:root {
+  --bg: #f6f3ee;
+  --surface: #ffffff;
+  --surface-strong: #f0e8dc;
+  --ink: #142032;
+  --muted: #5f7084;
+  --accent: #e07a44;
+  --accent-ink: #5a2f14;
+  --ok: #1e9150;
+  --warn: #d17a00;
+  --danger: #c44536;
+}
+
+@theme inline {
+  --font-sans: var(--font-sora);
+  --font-mono: var(--font-space-mono);
+}
+
+body {
+  background:
+    radial-gradient(circle at 15% 0%, rgba(224, 122, 68, 0.2), transparent 40%),
+    radial-gradient(circle at 85% 10%, rgba(20, 32, 50, 0.08), transparent 35%),
+    var(--bg);
+  color: var(--ink);
+  font-family: var(--font-sora), sans-serif;
+  min-height: 100vh;
+}
+
+a {
+  color: inherit;
+}
+
+.card {
+  background: var(--surface);
+  border: 1px solid rgba(20, 32, 50, 0.08);
+  border-radius: 1rem;
+  box-shadow: 0 20px 40px -28px rgba(20, 32, 50, 0.4);
+}
+
+.text-muted {
+  color: var(--muted);
+}
+
+.status-critical {
+  color: var(--danger);
+}
+
+.status-warning {
+  color: var(--warn);
+}
+
+.status-good {
+  color: var(--ok);
+}
+
+.status-great {
+  color: var(--ok);
+}
