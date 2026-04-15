@@ -1,8 +1,7 @@
 # ================================================================
 # CI/CD Pipeline — Controle Financeiro App
 # ================================================================
-# Triggers: push/PR para main e develop
-# Jobs: lint → build & test → docker build/push → deploy (opcional)
+# Stages: lint → unit tests → build → e2e → docker push → deploy
 # ================================================================
 
 name: CI/CD Pipeline
@@ -14,29 +13,25 @@ on:
     branches: [main]
 
 env:
-  # Altere para o seu Docker Hub user ou use ghcr.io (GitHub Container Registry)
   REGISTRY: ghcr.io
-  BACKEND_IMAGE: ghcr.io/${{ github.repository }}/backend
-  FRONTEND_IMAGE: ghcr.io/${{ github.repository }}/frontend
+  NODE_VERSION: 22
 
 jobs:
-  # ────────────────────────────────────────────
-  # 1. LINT
-  # ────────────────────────────────────────────
+  # ════════════════════════════════════════════
+  # 1. LINT (backend + frontend em paralelo)
+  # ════════════════════════════════════════════
   lint:
-    name: Lint
+    name: "Lint (${{ matrix.project }})"
     runs-on: ubuntu-latest
     strategy:
       matrix:
         project: [backend, frontend]
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
+      - uses: actions/setup-node@v4
         with:
-          node-version: 22
+          node-version: ${{ env.NODE_VERSION }}
           cache: npm
           cache-dependency-path: ${{ matrix.project }}/package-lock.json
 
@@ -44,22 +39,59 @@ jobs:
         working-directory: ${{ matrix.project }}
         run: npm ci
 
-      - name: Generate Prisma Client (backend only)
+      - name: Generate Prisma Client
         if: matrix.project == 'backend'
         working-directory: backend
         run: npx prisma generate
 
-      - name: Run ESLint
+      - name: ESLint
         working-directory: ${{ matrix.project }}
         run: npm run lint
 
-  # ────────────────────────────────────────────
-  # 2. BUILD & TEST
-  # ────────────────────────────────────────────
-  build:
-    name: Build & Test
+  # ════════════════════════════════════════════
+  # 2. UNIT TESTS (backend + frontend em paralelo)
+  # ════════════════════════════════════════════
+  unit-tests:
+    name: "Unit Tests (${{ matrix.project }})"
     runs-on: ubuntu-latest
     needs: lint
+    strategy:
+      matrix:
+        project: [backend, frontend]
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+          cache-dependency-path: ${{ matrix.project }}/package-lock.json
+
+      - name: Install dependencies
+        working-directory: ${{ matrix.project }}
+        run: npm ci
+
+      - name: Generate Prisma Client
+        if: matrix.project == 'backend'
+        working-directory: backend
+        run: npx prisma generate
+
+      - name: Run tests
+        working-directory: ${{ matrix.project }}
+        run: npm test
+
+      - name: Run tests with coverage
+        working-directory: ${{ matrix.project }}
+        run: npm run test:coverage
+        continue-on-error: true
+
+  # ════════════════════════════════════════════
+  # 3. BUILD (verifica compilação de ambos)
+  # ════════════════════════════════════════════
+  build:
+    name: "Build (${{ matrix.project }})"
+    runs-on: ubuntu-latest
+    needs: unit-tests
     strategy:
       matrix:
         project: [backend, frontend]
@@ -78,13 +110,11 @@ jobs:
           --health-timeout 5s
           --health-retries 5
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
+      - uses: actions/setup-node@v4
         with:
-          node-version: 22
+          node-version: ${{ env.NODE_VERSION }}
           cache: npm
           cache-dependency-path: ${{ matrix.project }}/package-lock.json
 
@@ -92,12 +122,12 @@ jobs:
         working-directory: ${{ matrix.project }}
         run: npm ci
 
-      - name: Generate Prisma Client (backend only)
+      - name: Generate Prisma Client
         if: matrix.project == 'backend'
         working-directory: backend
         run: npx prisma generate
 
-      - name: Run Prisma Migrations (backend only)
+      - name: Run Prisma Migrations
         if: matrix.project == 'backend'
         working-directory: backend
         env:
@@ -108,17 +138,101 @@ jobs:
         working-directory: ${{ matrix.project }}
         env:
           DATABASE_URL: "postgresql://postgres:postgres@localhost:5432/controle_financeiro?schema=public"
-          JWT_SECRET: ci-test-secret-key-minimum-8
+          JWT_SECRET: ci-build-secret-key-minimum-8
           USE_MOCK_MODE: "true"
         run: npm run build
 
-  # ────────────────────────────────────────────
-  # 3. DOCKER BUILD & PUSH
-  # ────────────────────────────────────────────
-  docker:
-    name: Docker Build & Push
+  # ════════════════════════════════════════════
+  # 4. E2E TESTS (Playwright)
+  # ════════════════════════════════════════════
+  e2e:
+    name: E2E Tests
     runs-on: ubuntu-latest
     needs: build
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+
+      - name: Install backend dependencies
+        working-directory: backend
+        run: npm ci
+
+      - name: Install frontend dependencies
+        working-directory: frontend
+        run: npm ci
+
+      - name: Install E2E dependencies
+        working-directory: e2e
+        run: npm ci
+
+      - name: Generate Prisma Client
+        working-directory: backend
+        run: npx prisma generate
+
+      - name: Install Playwright Chromium
+        working-directory: e2e
+        run: npx playwright install chromium --with-deps
+
+      - name: Start backend (mock mode)
+        working-directory: backend
+        env:
+          USE_MOCK_MODE: "true"
+          JWT_SECRET: e2e-ci-secret-key-minimum-8
+          DATABASE_URL: "postgresql://localhost/unused"
+          NODE_ENV: test
+          PORT: 3333
+          HOST: 0.0.0.0
+        run: npx tsx src/main.ts &
+
+      - name: Build frontend
+        working-directory: frontend
+        run: npm run build
+
+      - name: Start frontend
+        working-directory: frontend
+        env:
+          NEXT_PUBLIC_API_URL: "http://localhost:3333"
+        run: npm start &
+
+      - name: Wait for backend
+        run: |
+          for i in $(seq 1 30); do
+            curl -s http://localhost:3333/health && break
+            sleep 1
+          done
+
+      - name: Wait for frontend
+        run: |
+          for i in $(seq 1 30); do
+            curl -s http://localhost:3000 && break
+            sleep 1
+          done
+
+      - name: Run Playwright tests
+        working-directory: e2e
+        env:
+          CI: "true"
+          E2E_BASE_URL: "http://localhost:3000"
+        run: npx playwright test
+
+      - name: Upload Playwright report
+        uses: actions/upload-artifact@v4
+        if: ${{ !cancelled() }}
+        with:
+          name: playwright-report
+          path: e2e/playwright-report/
+          retention-days: 14
+
+  # ════════════════════════════════════════════
+  # 5. DOCKER BUILD & PUSH
+  # ════════════════════════════════════════════
+  docker:
+    name: "Docker (${{ matrix.project }})"
+    runs-on: ubuntu-latest
+    needs: e2e
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     permissions:
       contents: read
@@ -128,25 +242,21 @@ jobs:
         include:
           - project: backend
             context: ./backend
-            image_env: BACKEND_IMAGE
           - project: frontend
             context: ./frontend
-            image_env: FRONTEND_IMAGE
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
+      - uses: docker/setup-buildx-action@v3
 
-      - name: Log in to GitHub Container Registry
+      - name: Log in to GHCR
         uses: docker/login-action@v3
         with:
           registry: ghcr.io
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Extract metadata
+      - name: Docker metadata
         id: meta
         uses: docker/metadata-action@v5
         with:
@@ -165,35 +275,19 @@ jobs:
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
-  # ────────────────────────────────────────────
-  # 4. DEPLOY (opcional — Railway / Render / VPS)
-  # ────────────────────────────────────────────
-  # Descomente e configure conforme o provedor escolhido.
-  #
+  # ════════════════════════════════════════════
+  # 6. DEPLOY (descomente quando configurar)
+  # ════════════════════════════════════════════
   # deploy:
   #   name: Deploy to Production
   #   runs-on: ubuntu-latest
   #   needs: docker
   #   if: github.ref == 'refs/heads/main'
   #   steps:
-  #     # ── Opção A: Deploy via Railway ──
-  #     - name: Checkout
-  #       uses: actions/checkout@v4
+  #     - uses: actions/checkout@v4
   #     - name: Install Railway CLI
   #       run: npm i -g @railway/cli
   #     - name: Deploy
   #       env:
   #         RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
   #       run: railway up --detach
-  #
-  #     # ── Opção B: Deploy via SSH (VPS / DigitalOcean) ──
-  #     # - name: Deploy via SSH
-  #     #   uses: appleboy/ssh-action@v1
-  #     #   with:
-  #     #     host: ${{ secrets.SSH_HOST }}
-  #     #     username: ${{ secrets.SSH_USER }}
-  #     #     key: ${{ secrets.SSH_PRIVATE_KEY }}
-  #     #     script: |
-  #     #       cd /opt/controle-financeiro-app
-  #     #       docker compose pull
-  #     #       docker compose up -d --remove-orphans
