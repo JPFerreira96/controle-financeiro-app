@@ -2,6 +2,7 @@ import { randomUUID } from "node:crypto";
 
 import type {
   CreateExpenseParams,
+  UpdateExpenseParams,
   IExpenseRepository,
 } from "../../domain/repositories/expense-repository.js";
 import type { DateRangeFilter } from "../../domain/repositories/income-repository.js";
@@ -46,5 +47,30 @@ export class MockExpenseRepository implements IExpenseRepository {
     }
 
     return true;
+  }
+
+  async findById(id: string, userId: string) {
+    return inMemoryStore.expenses.find((e) => e.id === id && e.userId === userId) ?? null;
+  }
+
+  async update(id: string, userId: string, params: UpdateExpenseParams) {
+    const index = inMemoryStore.expenses.findIndex((e) => e.id === id && e.userId === userId);
+    if (index === -1) throw new Error("Expense not found");
+    const updated = {
+      ...inMemoryStore.expenses[index]!,
+      title: params.title ?? inMemoryStore.expenses[index]!.title,
+      amountInCents: params.amountInCents ?? inMemoryStore.expenses[index]!.amountInCents,
+      spentAt: params.spentAt ?? inMemoryStore.expenses[index]!.spentAt,
+      category: params.category ?? inMemoryStore.expenses[index]!.category,
+      updatedAt: new Date(),
+    };
+    inMemoryStore.expenses[index] = updated;
+    return updated;
+  }
+
+  async delete(id: string, userId: string) {
+    const index = inMemoryStore.expenses.findIndex((e) => e.id === id && e.userId === userId);
+    if (index === -1) throw new Error("Expense not found");
+    inMemoryStore.expenses.splice(index, 1);
   }
 }

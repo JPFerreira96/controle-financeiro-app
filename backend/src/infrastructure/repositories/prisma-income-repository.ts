@@ -3,6 +3,7 @@ import type { PrismaClient } from "@prisma/client";
 import type {
   IIncomeRepository,
   CreateIncomeParams,
+  UpdateIncomeParams,
   DateRangeFilter,
 } from "../../domain/repositories/income-repository.js";
 
@@ -30,6 +31,29 @@ export class PrismaIncomeRepository implements IIncomeRepository {
       orderBy: {
         receivedAt: "desc",
       },
+    });
+  }
+
+  findById(id: string, userId: string) {
+    return this.prisma.income.findFirst({
+      where: { id, userId },
+    });
+  }
+
+  async update(id: string, userId: string, params: UpdateIncomeParams) {
+    const existing = await this.prisma.income.findFirst({ where: { id, userId } });
+    if (!existing) throw new Error("Income not found");
+    return this.prisma.income.update({
+      where: { id },
+      data: params,
+    });
+  }
+
+  async delete(id: string, userId: string) {
+    const existing = await this.prisma.income.findFirst({ where: { id, userId } });
+    if (!existing) throw new Error("Income not found");
+    await this.prisma.income.delete({
+      where: { id },
     });
   }
 }
