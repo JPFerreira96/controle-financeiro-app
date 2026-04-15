@@ -7,7 +7,10 @@ const envSchema = z.object({
   HOST: z.string().default("0.0.0.0"),
   PORT: z.coerce.number().int().positive().default(3333),
   JWT_SECRET: z.string().min(8),
-  USE_MOCK_MODE: z.coerce.boolean().default(false),
+  USE_MOCK_MODE: z
+    .string()
+    .default("false")
+    .transform((val) => val === "true"),
   DATABASE_PROVIDER: z.enum(["postgresql", "mysql"]).default("postgresql"),
   DATABASE_URL: z.string().min(1),
   API_KEY_OPENAI: z.string().optional(),
