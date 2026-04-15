@@ -27,7 +27,7 @@ describe("RegisterUserUseCase", () => {
     });
     expect(result.id).toBeDefined();
     expect(result.createdAt).toBeInstanceOf(Date);
-    expect((result as Record<string, unknown>)["passwordHash"]).toBeUndefined();
+    expect((result as unknown as Record<string, unknown>)["passwordHash"]).toBeUndefined();
   });
 
   it("should throw 409 if email is already registered", async () => {
