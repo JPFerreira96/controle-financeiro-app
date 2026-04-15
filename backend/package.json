@@ -11,7 +11,10 @@
     "prisma:generate": "npm run prisma:prepare-provider && prisma generate",
     "prisma:migrate": "npm run prisma:prepare-provider && prisma migrate dev",
     "prisma:studio": "prisma studio",
-    "lint": "eslint src --ext .ts"
+    "lint": "eslint src --ext .ts",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:coverage": "vitest run --coverage"
   },
   "keywords": [
     "fastify",
@@ -37,10 +40,12 @@
   "devDependencies": {
     "@eslint/js": "^10.0.1",
     "@types/node": "^25.5.0",
+    "@vitest/coverage-v8": "^4.1.4",
     "eslint": "^10.1.0",
     "prisma": "^6.16.2",
     "tsx": "^4.21.0",
     "typescript": "^5.9.3",
-    "typescript-eslint": "^8.57.2"
+    "typescript-eslint": "^8.57.2",
+    "vitest": "^4.1.4"
   }
 }
