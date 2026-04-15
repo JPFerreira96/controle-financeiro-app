@@ -5,7 +5,7 @@ services:
     container_name: controle_financeiro_postgres
     restart: unless-stopped
     ports:
-      - "5432:5432"
+      - "5433:5432"
     environment:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres
@@ -31,6 +31,7 @@ services:
       - ./backend/.env
     environment:
       DATABASE_URL: "postgresql://postgres:postgres@postgres:5432/controle_financeiro?schema=public"
+      USE_MOCK_MODE: "false"
     depends_on:
       postgres:
         condition: service_healthy
