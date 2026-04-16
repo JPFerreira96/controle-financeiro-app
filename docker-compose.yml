@@ -37,6 +37,12 @@ services:
         condition: service_healthy
     command: >
       sh -c "npx prisma migrate deploy && node dist/main.js"
+    develop:
+      watch:
+        - action: rebuild
+          path: ./backend/src
+        - action: rebuild
+          path: ./backend/prisma
 
   # ── Frontend (Next.js) ──
   frontend:
@@ -51,6 +57,12 @@ services:
       - "3000:3000"
     depends_on:
       - backend
+    develop:
+      watch:
+        - action: rebuild
+          path: ./frontend/src
+        - action: rebuild
+          path: ./frontend/public
 
 volumes:
   pg_data:
